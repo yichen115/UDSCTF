@@ -14,7 +14,7 @@ chmod 750 /home/ctfuser
 chmod 700 /opt/udsctf/uds_server
 chown root:root /opt/udsctf/uds_server
 
-# 创建欢迎信息
+# 创建欢迎信息文件
 cat > /home/ctfuser/.welcome << 'EOF'
 欢迎来到UDSCTF挑战环境！
 
@@ -35,5 +35,8 @@ UDS响应: 0x7E8
 EOF
 
 chown ctfuser:ctfuser /home/ctfuser/.welcome
+
+# 确保.bashrc权限正确
+chown ctfuser:ctfuser /home/ctfuser/.bashrc
 
 echo "权限设置完成" 

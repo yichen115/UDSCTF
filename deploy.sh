@@ -86,31 +86,5 @@ echo "   - 受限shell限制命令执行"
 echo "   - 文件访问权限严格控制"
 
 echo ""
-echo "挑战环境已部署！"
+echo "挑战环境已部署！🎉"
 echo "===================="
-echo "连接方式: nc localhost 9999"
-echo ""
-
-if [ "$DEPLOY_METHOD" = "docker-compose" ]; then
-    echo "管理命令:"
-    echo "  查看日志: docker-compose logs -f"
-    echo "  停止服务: docker-compose down"
-    echo "  重启服务: docker-compose restart"
-else
-    echo "管理命令:"
-    echo "  查看日志: docker logs udsctf-container"
-    echo "  停止服务: docker stop udsctf-container"
-    echo "  重启服务: docker restart udsctf-container"
-fi
-
-echo ""
-echo "5. 运行测试验证环境..."
-if command -v python3 &> /dev/null; then
-    echo "请稍等，正在测试环境..."
-    sleep 3
-    # 注意：测试脚本需要在具有CAN支持的环境中运行
-    echo "注意: 测试脚本需要在Linux环境中运行，当前已跳过自动测试"
-    echo "请手动运行: python3 test_ssh.py"
-else
-    echo "Python3未安装，跳过自动测试"
-fi 

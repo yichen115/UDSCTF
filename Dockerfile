@@ -87,7 +87,17 @@ RUN chown ctfuser:ctfuser /home/ctfuser/challenge && \
 # 创建用户别名和限制 - 简化版本
 RUN echo "alias find='echo \"错误: find命令被禁用\"'" >> /home/ctfuser/.bashrc && \
     echo "export PATH=/usr/local/bin:/usr/bin:/bin" >> /home/ctfuser/.bashrc && \
-    echo "cd /home/ctfuser/challenge" >> /home/ctfuser/.bashrc
+    echo "cd /home/ctfuser/challenge" >> /home/ctfuser/.bashrc && \
+    echo "" >> /home/ctfuser/.bashrc && \
+    echo "# 显示欢迎信息" >> /home/ctfuser/.bashrc && \
+    echo "if [ -f /home/ctfuser/.welcome ]; then" >> /home/ctfuser/.bashrc && \
+    echo "    cat /home/ctfuser/.welcome" >> /home/ctfuser/.bashrc && \
+    echo "fi" >> /home/ctfuser/.bashrc && \
+    echo "" >> /home/ctfuser/.bashrc && \
+    echo "# 显示当前工作目录" >> /home/ctfuser/.bashrc && \
+    echo "echo \"当前工作目录: \$(pwd)\"" >> /home/ctfuser/.bashrc && \
+    echo "echo \"可用命令: python3, vim, cansend, candump, cangen, isotpdump, isotpsend\"" >> /home/ctfuser/.bashrc && \
+    echo "echo \"\"" >> /home/ctfuser/.bashrc
 
 # 删除编译工具（安全措施）
 RUN apt-get remove -y build-essential gcc g++ make && \

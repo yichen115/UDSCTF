@@ -203,27 +203,70 @@ int main() {
             printf("[LOG] 非UDS物理寻址帧，忽略\n");
             continue;
         }
+        
+        // 解析ISO-TP长度字段
+        uint8_t frame_type = (frame.data[0] >> 4) & 0x0F;
+        uint8_t data_length = frame.data[0] & 0x0F;
+        uint8_t *uds_data = NULL;
+        int uds_data_len = 0;
+        
+        printf("[LOG] ISO-TP帧类型: 0x%X, 数据长度: %d\n", frame_type, data_length);
+        
+        if (frame_type == 0x0) { // 单帧
+            if (data_length > 0 && data_length <= 7) {
+                uds_data = &frame.data[1];
+                uds_data_len = data_length;
+                printf("[LOG] 单帧UDS数据: ");
+                for (int i = 0; i < uds_data_len; ++i) printf("%02X ", uds_data[i]);
+                printf("\n");
+            } else {
+                printf("[LOG] 单帧数据长度无效: %d\n", data_length);
+                continue;
+            }
+        } else if (frame_type == 0x1) { // 首帧
+            printf("[LOG] 收到首帧，暂不支持多帧处理\n");
+            continue;
+        } else if (frame_type == 0x2) { // 连续帧
+            printf("[LOG] 收到连续帧，暂不支持多帧处理\n");
+            continue;
+        } else if (frame_type == 0x3) { // 流控帧
+            printf("[LOG] 收到流控帧，忽略\n");
+            continue;
+        } else {
+            printf("[LOG] 未知帧类型: 0x%X\n", frame_type);
+            continue;
+        }
+        
+        if (uds_data == NULL || uds_data_len == 0) {
+            printf("[LOG] 无有效UDS数据\n");
+            continue;
+        }
+        
         uint8_t resp[64];
         int resp_len = 0;
         int handled = 0;
-        if (frame.data[0] == 0x22) {
-            handled = handle_read_data_by_identifier(frame.data, frame.can_dlc, resp, &resp_len);
+        
+        if (uds_data[0] == 0x22) {
+            handled = handle_read_data_by_identifier(uds_data, uds_data_len, resp, &resp_len);
             if (handled == 2) {
                 // 多帧发送
-                uint8_t did[2] = {frame.data[1], frame.data[2]};
+                uint8_t did[2] = {uds_data[1], uds_data[2]};
                 send_isotp_response(s, 0x62, did, VIN_FLAG, strlen(VIN_FLAG));
                 continue;
             }
-        } else if (frame.data[0] == 0x27) {
-            handled = handle_security_access(frame.data, frame.can_dlc, resp, &resp_len);
+        } else if (uds_data[0] == 0x27) {
+            handled = handle_security_access(uds_data, uds_data_len, resp, &resp_len);
         } else {
-            printf("[LOG] 未实现的服务号: 0x%02X\n", frame.data[0]);
+            printf("[LOG] 未实现的服务号: 0x%02X\n", uds_data[0]);
         }
+        
         if (handled == 0 && resp_len > 0) {
             struct can_frame txf;
             txf.can_id = UDS_RESP_ID;
-            txf.can_dlc = resp_len;
-            memcpy(txf.data, resp, resp_len);
+            // 添加ISO-TP长度字段
+            txf.data[0] = resp_len; // 单帧，长度字段
+            memcpy(&txf.data[1], resp, resp_len);
+            txf.can_dlc = 1 + resp_len;
             printf("[LOG] 发送响应: can_id=0x%03X, dlc=%d, data=", txf.can_id, txf.can_dlc);
             for (int i = 0; i < txf.can_dlc; ++i) printf("%02X ", txf.data[i]);
             printf("\n");
