@@ -19,7 +19,7 @@ cat > /home/ctfuser/.welcome << 'EOF'
 欢迎来到UDSCTF挑战环境！
 
 可用工具：
-- python3: 使用python-can库
+- python3: 使用python-can、isotp库
 - vim: 编辑Python脚本
 - cansend: 发送CAN帧
 - candump: 监听CAN帧

@@ -3,7 +3,8 @@ version: '3.3'
 services:
   udsctf:
     build: .
-    container_name: udsctf-challenge
+    image: udsctf:latest
+    container_name: udsctf-container
     privileged: true  # 需要privileged权限来创建CAN接口
     ports:
       - "2222:22"  # SSH端口

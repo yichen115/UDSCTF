@@ -31,8 +31,21 @@ find /home/ctfuser -name "Makefile" -delete 2>/dev/null || true
 find /home/ctfuser -name "*.o" -delete 2>/dev/null || true
 find /home/ctfuser -name "*.py" -delete 2>/dev/null || true
 
-# 后台启动UDS服务器（从系统目录）
-./uds_server &
+# 启动UDS服务器（带重启逻辑）
+while true; do
+    echo "启动UDS服务器..."
+    ./uds_server
+    UDS_EXIT_CODE=$?
+    echo "UDS服务器退出，退出码: $UDS_EXIT_CODE"
+    
+    if [ $UDS_EXIT_CODE -eq 0 ]; then
+        echo "检测到正常重启请求，3秒后重启UDS服务器..."
+        sleep 3
+    else
+        echo "UDS服务器异常退出，5秒后重启..."
+        sleep 5
+    fi
+done &
 UDS_PID=$!
 
 echo "UDS服务器已启动 (PID: $UDS_PID)"

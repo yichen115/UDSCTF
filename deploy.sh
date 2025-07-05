@@ -3,7 +3,8 @@
 
 set -e
 
-echo "🚀 开始部署UDSCTF挑战环境..."
+echo "🚗 UDSCTF 部署脚本启动..."
+echo "================================"
 
 # 检查Docker是否安装
 if ! command -v docker &> /dev/null; then
@@ -26,13 +27,9 @@ if ! docker info &> /dev/null; then
     exit 1
 fi
 
-# 构建镜像
-echo "🔨 构建Docker镜像..."
-docker build -t udsctf:latest .
-
 if [ "$DEPLOY_METHOD" = "docker-compose" ]; then
-    echo "📦 使用docker-compose启动服务..."
-    docker-compose up -d
+    echo "📦 使用docker-compose构建并启动服务..."
+    docker-compose up -d --build
     
     echo "✅ 部署完成！"
     echo ""
@@ -46,6 +43,9 @@ if [ "$DEPLOY_METHOD" = "docker-compose" ]; then
     echo "   重启服务: docker-compose restart"
     
 else
+    echo "🔨 构建Docker镜像..."
+    docker build -t udsctf:latest .
+    
     echo "🐳 使用Docker直接启动容器..."
     
     # 停止并删除旧容器（如果存在）

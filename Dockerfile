@@ -29,7 +29,7 @@ RUN mkdir -p ~/.pip && \
     echo "trusted-host = mirrors.aliyun.com" >> ~/.pip/pip.conf
 
 # 安装python-can库
-RUN pip3 install python-can
+RUN pip3 install python-can can-isotp
 
 # 创建CTF用户和工作目录
 RUN useradd -m -s /bin/bash ctfuser && \

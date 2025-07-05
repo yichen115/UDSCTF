@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -O2
+CFLAGS=-Wall -O2 -fno-pie -no-pie -Wl,-Ttext=0x40000000
 OBJS=uds_server.o iso14229.o
 
 all: uds_server
