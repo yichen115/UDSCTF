@@ -79,9 +79,9 @@ def dump_memory(s, start_addr, size, step=0x50, output_file="memory_dump.bin"):
                     # 在内存数据中寻找flag
                     try:
                         data_str = memory_data.decode('utf-8', errors='ignore')
-                        if 'CTF{' in data_str:
+                        if 'UDSCTF{' in data_str:
                             # 找到flag
-                            start_idx = data_str.find('CTF{')
+                            start_idx = data_str.find('UDSCTF{')
                             end_idx = data_str.find('}', start_idx)
                             if end_idx != -1:
                                 flag = data_str[start_idx:end_idx+1]
@@ -140,7 +140,7 @@ def get_flags():
     response = s.recv()
     if response and response[0] == 0x67:
         seed = response[2:6]  # 跳过0x67和0x01
-        if seed != b'\0\0\0\0':
+        if seed != b'\x00\x00\x00\x00':
             key_val = struct.unpack('>I', seed)[0] ^ 0xdeadbeef
             key = struct.pack('>I', key_val)
             # 发送key
@@ -152,7 +152,7 @@ def get_flags():
                 response = s.recv()
                 if response and response[0] == 0x62:
                     flag = response[3:].decode('utf-8', errors='ignore')
-                    print(f"安全flag: {flag}")
+                    print(f"获取到安全访问级别1下DID：C1C2的flag: {flag}")
     
     # 3. 高级flag (级别3)
     print("\n[3] 获取高级flag...")
@@ -164,7 +164,7 @@ def get_flags():
     response = s.recv()
     if response and response[0] == 0x67:
         seed = response[2:6]
-        if seed != b'\0\0\0\0':
+        if seed != b'\x00\x00\x00\x00':
             # 计算级别3 key
             key_val = struct.unpack('>I', seed)[0]
             key_val = ((key_val << 7) | (key_val >> 25)) & 0xFFFFFFFF
@@ -182,7 +182,7 @@ def get_flags():
                 response = s.recv()
                 if response and response[0] == 0x62:
                     flag = response[3:].decode('utf-8', errors='ignore')
-                    print(f"高级flag: {flag}")
+                    print(f"获取到安全访问级别3下DID：D1D2的flag: {flag}")
     
     # 4. 内存dump (级别5)
     print("\n[4] 获取内存flag...")
@@ -211,6 +211,7 @@ def get_flags():
                     print(f"\n找到 {len(found_flags)} 个flag:")
                     for addr, flag in found_flags:
                         print(f"  地址 0x{addr:08X}: {flag}")
+                        print("若未找到flag可能恰好字符串被分割，请下载固件自行搜索")
                 else:
                     print("未找到内存中的flag")
                     
@@ -225,8 +226,8 @@ def get_flags():
             flag_data = response[3:]
             try:
                 flag = flag_data.decode('utf-8', errors='ignore')
-                if 'CTF{' in flag:
-                    print(f"启动flag: {flag}")
+                if 'UDSCTF{' in flag:
+                    print(f"获取到复位时flag: {flag}")
             except:
                 pass
     except:
@@ -234,302 +235,5 @@ def get_flags():
     
     s.close()
 
-def convert_dump_to_hex(input_file, output_file):
-    """将内存dump文件转换为十六进制格式，方便查看"""
-    print(f"将 {input_file} 转换为十六进制格式: {output_file}")
-    
-    try:
-        with open(input_file, 'rb') as f_in, open(output_file, 'w') as f_out:
-            # 读取整个文件数据
-            memory_data = f_in.read()
-            
-            f_out.write(f"# 内存dump文件: {input_file}\n")
-            f_out.write(f"# 文件大小: {len(memory_data)} 字节\n")
-            f_out.write("# 格式: 偏移 十六进制数据 ASCII数据\n")
-            f_out.write("#" + "="*80 + "\n")
-            
-            # 按16字节一行输出
-            for i in range(0, len(memory_data), 16):
-                offset = i
-                chunk = memory_data[i:i+16]
-                
-                # 转换为十六进制
-                hex_data = ' '.join([f"{b:02X}" for b in chunk])
-                hex_data = hex_data.ljust(47)  # 补齐到47个字符
-                
-                # 转换为ASCII（不可打印字符用点代替）
-                ascii_data = ''.join([chr(b) if 32 <= b <= 126 else '.' for b in chunk])
-                
-                # 写入文件
-                f_out.write(f"0x{offset:08X}: {hex_data} |{ascii_data}|\n")
-        
-        print(f"转换完成: {output_file}")
-        
-    except FileNotFoundError:
-        print(f"文件 {input_file} 不存在")
-    except Exception as e:
-        print(f"转换文件时出错: {e}")
-
-def analyze_memory_dump(filename):
-    """分析保存的内存dump文件"""
-    print(f"分析内存dump文件: {filename}")
-    
-    try:
-        with open(filename, 'rb') as f:
-            found_flags = []
-            total_bytes = 0
-            
-            # 读取整个文件数据
-            memory_data = f.read()
-            total_bytes = len(memory_data)
-            
-            print(f"文件大小: {total_bytes} 字节")
-            
-            # 在数据中寻找flag
-            try:
-                data_str = memory_data.decode('utf-8', errors='ignore')
-                if 'CTF{' in data_str:
-                    # 找到所有flag
-                    start_pos = 0
-                    while True:
-                        start_idx = data_str.find('CTF{', start_pos)
-                        if start_idx == -1:
-                            break
-                        end_idx = data_str.find('}', start_idx)
-                        if end_idx != -1:
-                            flag = data_str[start_idx:end_idx+1]
-                            found_flags.append((start_idx, flag))
-                            print(f"找到flag: {flag} (位置: {start_idx})")
-                        start_pos = start_idx + 1
-            except:
-                pass
-            
-            # 搜索ELF头
-            if len(memory_data) >= 4 and memory_data[:4] == b'\x7FELF':
-                print(f"找到ELF头: 位置 0")
-                print(f"  ELF头: {' '.join([f'{b:02X}' for b in memory_data[:16]])}")
-            
-            # 搜索其他模式
-            if len(memory_data) >= 4:
-                # 搜索字符串
-                if b'.text' in memory_data or b'.data' in memory_data or b'.bss' in memory_data:
-                    print(f"找到节名")
-                
-                # 搜索函数名
-                if b'main' in memory_data or b'printf' in memory_data or b'malloc' in memory_data:
-                    print(f"找到函数名")
-            
-            print(f"分析完成，总共处理了 {total_bytes} 字节")
-            
-            if found_flags:
-                print(f"\n在dump文件中找到 {len(found_flags)} 个flag:")
-                for pos, flag in found_flags:
-                    print(f"  位置 {pos}: {flag}")
-            else:
-                print("在dump文件中未找到flag")
-                
-    except FileNotFoundError:
-        print(f"文件 {filename} 不存在")
-    except Exception as e:
-        print(f"分析文件时出错: {e}")
-
-def search_elf_patterns(filename):
-    """在dump文件中搜索ELF头和特定模式"""
-    print(f"在 {filename} 中搜索ELF模式和特定结构...")
-    
-    try:
-        with open(filename, 'rb') as f:
-            # 读取整个文件数据
-            memory_data = f.read()
-            print(f"文件大小: {len(memory_data)} 字节")
-            
-            elf_headers = []
-            flag_patterns = []
-            
-            # 搜索ELF头 (0x7F 0x45 0x4C 0x46)
-            if len(memory_data) >= 4 and memory_data[:4] == b'\x7FELF':
-                elf_headers.append((0, memory_data[:16]))
-                print(f"找到ELF头: 位置 0")
-                print(f"  ELF头: {' '.join([f'{b:02X}' for b in memory_data[:16]])}")
-            
-            # 搜索其他常见模式
-            if len(memory_data) >= 4:
-                # 搜索字符串表
-                if b'.text' in memory_data or b'.data' in memory_data or b'.bss' in memory_data:
-                    print(f"找到节名")
-                
-                # 搜索函数名
-                if b'main' in memory_data or b'printf' in memory_data or b'malloc' in memory_data:
-                    print(f"找到函数名")
-                
-                # 搜索flag模式
-                if b'CTF{' in memory_data:
-                    flag_patterns.append((0, memory_data))
-                    print(f"找到flag模式")
-            
-            print(f"\n搜索完成")
-            print(f"找到ELF头: {len(elf_headers)} 个")
-            print(f"找到flag模式: {len(flag_patterns)} 个")
-            
-            if elf_headers:
-                print("\nELF头详情:")
-                for pos, header_data in elf_headers:
-                    print(f"  位置 {pos}: {' '.join([f'{b:02X}' for b in header_data])}")
-            
-            if flag_patterns:
-                print("\nFlag模式详情:")
-                for pos, data in flag_patterns:
-                    try:
-                        data_str = data.decode('utf-8', errors='ignore')
-                        if 'CTF{' in data_str:
-                            start_idx = data_str.find('CTF{')
-                            end_idx = data_str.find('}', start_idx)
-                            if end_idx != -1:
-                                flag = data_str[start_idx:end_idx+1]
-                                print(f"  位置 {pos}: {flag}")
-                    except:
-                        pass
-                
-    except FileNotFoundError:
-        print(f"文件 {filename} 不存在")
-    except Exception as e:
-        print(f"搜索文件时出错: {e}")
-
-def merge_elf_dumps(output_file="uds_complete_elf.bin"):
-    """合并所有ELF dump文件为一个完整的文件"""
-    print(f"合并所有ELF dump文件到: {output_file}")
-    
-    elf_files = [
-        "uds_elf_text.bin", "uds_elf_data.bin", "uds_elf_bss.bin",
-        "uds_elf_heap.bin", "uds_elf_stack.bin", "uds_elf_other.bin",
-        "uds_elf_ext1.bin", "uds_elf_ext2.bin", "uds_elf_ext3.bin", "uds_elf_ext4.bin",
-        "uds_elf_ext5.bin", "uds_elf_ext6.bin", "uds_elf_ext7.bin", "uds_elf_ext8.bin",
-        "uds_elf_mmap1.bin", "uds_elf_mmap2.bin", "uds_elf_mmap3.bin", "uds_elf_mmap4.bin",
-        "uds_elf_kernel1.bin", "uds_elf_kernel2.bin"
-    ]
-    
-    with open(output_file, 'wb') as out_f:
-        total_size = 0
-        successful_merges = 0
-        
-        for elf_file in elf_files:
-            try:
-                with open(elf_file, 'rb') as in_f:
-                    # 直接复制所有数据
-                    data = in_f.read()
-                    out_f.write(data)
-                    total_size += len(data)
-                    successful_merges += 1
-                    print(f"合并 {elf_file}: {len(data)} 字节")
-                    
-            except FileNotFoundError:
-                print(f"文件 {elf_file} 不存在，跳过")
-            except Exception as e:
-                print(f"合并 {elf_file} 时出错: {e}")
-    
-    print(f"合并完成！")
-    print(f"成功合并: {successful_merges}/{len(elf_files)} 个文件")
-    print(f"总大小: {total_size} 字节")
-    print(f"输出文件: {output_file}")
-
 if __name__ == "__main__":
     get_flags()
-    
-    # 分析保存的dump文件
-    print("\n" + "="*50)
-    print("分析保存的内存dump文件...")
-    
-    # 基础dump文件
-    analyze_memory_dump("uds_memory_dump.bin")
-    analyze_memory_dump("uds_full_dump.bin")
-    
-    # ELF dump文件
-    elf_files = [
-        "uds_elf_text.bin", "uds_elf_data.bin", "uds_elf_bss.bin",
-        "uds_elf_heap.bin", "uds_elf_stack.bin", "uds_elf_other.bin",
-        "uds_elf_ext1.bin", "uds_elf_ext2.bin", "uds_elf_ext3.bin", "uds_elf_ext4.bin",
-        "uds_elf_ext5.bin", "uds_elf_ext6.bin", "uds_elf_ext7.bin", "uds_elf_ext8.bin",
-        "uds_elf_mmap1.bin", "uds_elf_mmap2.bin", "uds_elf_mmap3.bin", "uds_elf_mmap4.bin",
-        "uds_elf_kernel1.bin", "uds_elf_kernel2.bin"
-    ]
-    
-    # ELF段文件
-    elf_segment_files = [
-        "uds_elf_header.bin", "uds_elf_phdr.bin", "uds_elf_shdr.bin",
-        "uds_elf_text_segment.bin", "uds_elf_data_segment.bin", "uds_elf_bss_segment.bin",
-        "uds_elf_rodata_segment.bin", "uds_elf_got_segment.bin", "uds_elf_plt_segment.bin",
-        "uds_elf_strtab_segment.bin", "uds_elf_symtab_segment.bin", "uds_elf_dynamic_segment.bin",
-        "uds_elf_stack_segment.bin", "uds_elf_heap_segment.bin"
-    ]
-    
-    # 分析ELF dump文件
-    for elf_file in elf_files:
-        try:
-            analyze_memory_dump(elf_file)
-        except FileNotFoundError:
-            print(f"文件 {elf_file} 不存在，跳过")
-        except Exception as e:
-            print(f"分析 {elf_file} 时出错: {e}")
-    
-    # 分析ELF段文件
-    for elf_segment_file in elf_segment_files:
-        try:
-            analyze_memory_dump(elf_segment_file)
-        except FileNotFoundError:
-            print(f"文件 {elf_segment_file} 不存在，跳过")
-        except Exception as e:
-            print(f"分析 {elf_segment_file} 时出错: {e}")
-    
-    # 转换为十六进制格式
-    print("\n" + "="*50)
-    print("转换为十六进制格式...")
-    
-    # 基础文件转换
-    convert_dump_to_hex("uds_memory_dump.bin", "uds_memory_dump.hex")
-    convert_dump_to_hex("uds_full_dump.bin", "uds_full_dump.hex")
-    
-    # ELF文件转换
-    for elf_file in elf_files:
-        try:
-            hex_file = elf_file.replace('.bin', '.hex')
-            convert_dump_to_hex(elf_file, hex_file)
-        except FileNotFoundError:
-            print(f"文件 {elf_file} 不存在，跳过转换")
-        except Exception as e:
-            print(f"转换 {elf_file} 时出错: {e}")
-    
-    # ELF段文件转换
-    for elf_segment_file in elf_segment_files:
-        try:
-            hex_file = elf_segment_file.replace('.bin', '.hex')
-            convert_dump_to_hex(elf_segment_file, hex_file)
-        except FileNotFoundError:
-            print(f"文件 {elf_segment_file} 不存在，跳过转换")
-        except Exception as e:
-            print(f"转换 {elf_segment_file} 时出错: {e}")
-    
-    # 合并ELF dump文件
-    print("\n" + "="*50)
-    print("合并ELF dump文件...")
-    merge_elf_dumps()
-    
-    # 搜索ELF模式和特定模式
-    print("\n" + "="*50)
-    print("搜索ELF模式和特定模式...")
-    search_elf_patterns("uds_memory_dump.bin")
-    search_elf_patterns("uds_full_dump.bin")
-    for elf_file in elf_files:
-        try:
-            search_elf_patterns(elf_file)
-        except FileNotFoundError:
-            print(f"文件 {elf_file} 不存在，跳过搜索")
-        except Exception as e:
-            print(f"搜索 {elf_file} 时出错: {e}")
-    
-    print("\n所有操作完成！生成的文件:")
-    print("- uds_memory_dump.bin/.hex: 基础内存dump文件")
-    print("- uds_full_dump.bin/.hex: 完整内存dump文件")
-    print("- uds_elf_*.bin/.hex: 各个ELF段的dump文件")
-    print("- uds_elf_*_segment.bin/.hex: 基于ELF格式的段文件")
-    print("- uds_complete_elf.bin: 合并后的完整ELF内存dump")
-    print("- 总共生成约50个文件，覆盖整个ELF内存空间") 

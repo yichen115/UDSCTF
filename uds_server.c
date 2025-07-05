@@ -10,16 +10,16 @@
 #include <sys/socket.h>
 #include <net/if.h>
 #include <sys/ioctl.h>
-#include "iso14229.h" // 假设你已有iso14229协议栈
+#include "iso14229.h"
 #include <time.h>
 #include <sys/select.h>
 #include <signal.h>
 
-#define PUBLIC_FLAG "CTF{UDS_CAN_PUBLIC_FLAG_2024}"
-#define SECURE_FLAG "CTF{UDS_CAN_SECURE_FLAG_2024}"
-#define ADVANCED_FLAG "CTF{UDS_CAN_SECURE_FLAG_2024}"
-#define BOOT_FLAG "CTF{UDS_CAN_BOOT_FLAG_2024}"
-#define MEMORY_FLAG "CTF{UDS_CAN_MEMORY_FLAG_2024}"
+#define PUBLIC_FLAG "UDSCTF{VINYICHEN00112233}"
+#define SECURE_FLAG "UDSCTF{27_securityX0r_C1C2}"
+#define ADVANCED_FLAG "UDSCTF{D1D2_Advanced_Flag}"
+#define BOOT_FLAG "UDSCTF{Reset_ThE_UDS_Server}"
+#define MEMORY_FLAG "UDSCTF{ReadMemory_T0_Find_Flag}"
 #define UDS_PHYS_ID 0x7E0
 #define UDS_RESP_ID 0x7E8
 
@@ -720,7 +720,7 @@ int handle_read_memory_by_address(uint8_t *req, int req_len, uint8_t *resp, int 
     
     // 15. 检查是否包含flag
     char *data_str = (char *)data_ptr;
-    if (strstr(data_str, "CTF{") != NULL) {
+    if (strstr(data_str, "UDSCTF{") != NULL) {
         printf("[LOG] *** 发现flag字符串! ***\n");
     }
     
