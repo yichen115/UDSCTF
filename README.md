@@ -2,7 +2,7 @@
 
 这是一个基于UDS（Unified Diagnostic Services）协议的CTF挑战环境，旨在测试对汽车诊断协议的理解和安全分析能力。挑战包含多个层次的flag获取，从基础的协议理解到高级的内存dump分析。
 
-所有代码由 AI 编写，可能存在错误（iso14229.c / .h 来源于：https://github.com/driftregion/iso14229 ）
+所有代码由 AI 编写，可能存在错误（ iso14229.c / .h 来源于：https://github.com/driftregion/iso14229 ）
 
 ## 挑战概述
 
