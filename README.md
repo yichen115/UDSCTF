@@ -21,7 +21,7 @@
 ./deploy.sh
 
 # SSH连接即可解题
-ssh ctfuser@localhost -p 2222     # 密码: ctpassword
+ssh ctfuser@localhost -p 2222     # 密码: ctfpassword
 ```
 
 ## 挑战内容详解
